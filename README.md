@@ -6,3 +6,5 @@
 txtfindは，指定した文字列をテキストファイルから検索し，一致した行を表示するコマンドラインツールである．
 
 ## 使い方（Usage）
+txtfind <pattern> <file>
+xtfind <pattern> <file> [OPTIONS]
