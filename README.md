@@ -1,7 +1,7 @@
 # txtfind
 
-![Build](https://github.com/ユーザー名/txtfind/actions/workflows/build.yaml/badge.svg)
-![Coverage](https://coveralls.io/repos/github/ユーザー名/txtfind/badge.svg)
+![Build](https://github.com/youdai-ky/txtfind/actions/workflows/build.yaml/badge.svg)
+![Coverage](https://coveralls.io/repos/github/youdai-ky/txtfind/badge.svg)
 
 テキスト検索CLIツール
 
