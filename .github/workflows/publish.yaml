@@ -1,0 +1,42 @@
+name: publish
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [closed]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    if: startsWith(github.head_ref, 'releases/v') && github.event.pull_request.merged == true
+
+    steps:
+      - name: Get tag name
+        id: vars
+        run: |
+          echo "tag=${GITHUB_HEAD_REF##*/v}" >> $GITHUB_OUTPUT
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Build release
+        run: |
+          cargo build --release
+          mkdir -p dist/txtfind-${{ steps.vars.outputs.tag }}
+          cp README.md LICENSE target/release/txtfind dist/txtfind-${{ steps.vars.outputs.tag }}/
+          tar cvfz dist/txtfind-${{ steps.vars.outputs.tag }}.tar.gz -C dist txtfind-${{ steps.vars.outputs.tag }}
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.vars.outputs.tag }}
+          name: Release v${{ steps.vars.outputs.tag }}
+          draft: true
+          files: dist/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
