@@ -154,3 +154,12 @@ txtfind --count
 - ツール名: txtfind
 - 開発言語: Rust
 - バージョン: 0.1.0
+
+## Dockerでの実行方法
+
+Dockerを使うことで，Rustの環境がない場合でも `txtfind` を実行できる。
+
+### Dockerイメージのビルド
+
+```bash
+docker build -t txtfind:latest -f Containerfile .
