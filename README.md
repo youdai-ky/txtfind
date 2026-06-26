@@ -1,5 +1,13 @@
 # txtfind
 
+![Rust](https://img.shields.io/badge/language-Rust-orange)
+![CLI](https://img.shields.io/badge/tool-CLI-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Build](https://github.com/unknow8921/txtfind/actions/workflows/build.yaml/badge.svg)
+![Coverage](https://img.shields.io/badge/coverage-0%25-red)
+
+テキストファイル内の文字列を検索するCLIツールです。
+
 テキストファイル内の文字列を検索するシンプルなCLIツールです。
 
 ## 概要
