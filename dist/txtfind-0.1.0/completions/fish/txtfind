@@ -1,0 +1,6 @@
+complete -c txtfind -s i -l ignore-case -d '大文字・小文字を区別せずに検索する'
+complete -c txtfind -s n -l line-number -d '行番号を表示する（現在はデフォルトで表示）'
+complete -c txtfind -s c -l count -d '一致件数のみを表示する'
+complete -c txtfind -l completions -d '各シェル用の補完ファイルを生成する'
+complete -c txtfind -s h -l help -d 'Print help'
+complete -c txtfind -s V -l version -d 'Print version'
