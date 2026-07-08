@@ -1,5 +1,7 @@
+.git
+target
+.DS_Store
+*.zip
 target/
 dist/
 *.tar.gz
-.DS_Store
-*.zip

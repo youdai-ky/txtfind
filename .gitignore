@@ -1,5 +1,15 @@
+# Rust build files
 target/
+
+# Distribution files
 dist/
 *.tar.gz
+
+# Generated completion files
+completions/
+
+# macOS files
 .DS_Store
+
+# Archive files
 *.zip
