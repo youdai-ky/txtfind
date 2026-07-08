@@ -1,0 +1,41 @@
+
+using namespace System.Management.Automation
+using namespace System.Management.Automation.Language
+
+Register-ArgumentCompleter -Native -CommandName 'txtfind' -ScriptBlock {
+    param($wordToComplete, $commandAst, $cursorPosition)
+
+    $commandElements = $commandAst.CommandElements
+    $command = @(
+        'txtfind'
+        for ($i = 1; $i -lt $commandElements.Count; $i++) {
+            $element = $commandElements[$i]
+            if ($element -isnot [StringConstantExpressionAst] -or
+                $element.StringConstantType -ne [StringConstantType]::BareWord -or
+                $element.Value.StartsWith('-') -or
+                $element.Value -eq $wordToComplete) {
+                break
+        }
+        $element.Value
+    }) -join ';'
+
+    $completions = @(switch ($command) {
+        'txtfind' {
+            [CompletionResult]::new('-i', '-i', [CompletionResultType]::ParameterName, '大文字・小文字を区別せずに検索する')
+            [CompletionResult]::new('--ignore-case', '--ignore-case', [CompletionResultType]::ParameterName, '大文字・小文字を区別せずに検索する')
+            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, '行番号を表示する（現在はデフォルトで表示）')
+            [CompletionResult]::new('--line-number', '--line-number', [CompletionResultType]::ParameterName, '行番号を表示する（現在はデフォルトで表示）')
+            [CompletionResult]::new('-c', '-c', [CompletionResultType]::ParameterName, '一致件数のみを表示する')
+            [CompletionResult]::new('--count', '--count', [CompletionResultType]::ParameterName, '一致件数のみを表示する')
+            [CompletionResult]::new('--completions', '--completions', [CompletionResultType]::ParameterName, '各シェル用の補完ファイルを生成する')
+            [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')
+            [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
+            break
+        }
+    })
+
+    $completions.Where{ $_.CompletionText -like "$wordToComplete*" } |
+        Sort-Object -Property ListItemText
+}

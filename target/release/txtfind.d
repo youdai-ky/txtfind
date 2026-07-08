@@ -1,0 +1,1 @@
+/Users/yu/エンピリカル/txtfind/target/release/txtfind: /Users/yu/エンピリカル/txtfind/src/gencomp.rs /Users/yu/エンピリカル/txtfind/src/main.rs
