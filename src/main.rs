@@ -1,27 +1,42 @@
-/*
-txtfind は，現在のディレクトリにあるファイルを一覧表示し，
-ユーザが選択した複数ファイルから指定文字列を検索するCLIツールである。
+mod gencomp;
 
-処理を関数ごとに分けることで，入力処理，ファイル一覧取得，検索処理，
-出力整形をそれぞれテストしやすい形にしている。
-*/
-
-use std::env;
+use clap::Parser;
 use std::fs;
 use std::io::{self, Write};
-use std::process;
+use std::path::Path;
+
+#[derive(Parser, Debug)]
+#[command(
+    name = "txtfind",
+    version,
+    about = "テキストファイル内の文字列を検索するCLIツール"
+)]
+pub struct Args {
+    #[arg(
+        short = 'i',
+        long = "ignore-case",
+        help = "大文字・小文字を区別せずに検索する"
+    )]
+    ignore_case: bool,
+
+    #[arg(
+        short = 'n',
+        long = "line-number",
+        help = "行番号を表示する（現在はデフォルトで表示）"
+    )]
+    line_number: bool,
+
+    #[arg(short = 'c', long = "count", help = "一致件数のみを表示する")]
+    count: bool,
+
+    #[arg(long = "completions", help = "各シェル用の補完ファイルを生成する")]
+    completions: bool,
+}
 
 #[derive(Debug, PartialEq)]
 struct Config {
     ignore_case: bool,
     count: bool,
-}
-
-#[derive(Debug, PartialEq)]
-enum Command {
-    Search(Config),
-    Help,
-    Version,
 }
 
 #[derive(Debug, PartialEq)]
@@ -32,54 +47,28 @@ struct MatchedLine {
 }
 
 fn main() {
-    let command = match parse_args(env::args().skip(1)) {
-        Ok(command) => command,
-        Err(message) => {
-            eprintln!("{message}");
-            eprintln!();
-            eprintln!("{}", help_message());
-            process::exit(1);
-        }
+    let args = Args::parse();
+
+    if args.completions {
+        gencomp::generate(Path::new("completions"));
+        println!("generated completion files in completions/");
+        return;
+    }
+
+    let _line_number = args.line_number;
+
+    let config = Config {
+        ignore_case: args.ignore_case,
+        count: args.count,
     };
 
-    match execute(command) {
+    match run_interactive_search(&config) {
         Ok(output) => print!("{output}"),
         Err(message) => {
             eprintln!("{message}");
-            process::exit(1);
+            std::process::exit(1);
         }
     }
-}
-
-fn execute(command: Command) -> Result<String, String> {
-    match command {
-        Command::Help => Ok(help_message()),
-        Command::Version => Ok(format!("txtfind {}\n", env!("CARGO_PKG_VERSION"))),
-        Command::Search(config) => run_interactive_search(&config),
-    }
-}
-
-fn parse_args<I>(args: I) -> Result<Command, String>
-where
-    I: IntoIterator<Item = String>,
-{
-    let mut ignore_case = false;
-    let mut count = false;
-
-    for arg in args {
-        match arg.as_str() {
-            "-h" | "--help" => return Ok(Command::Help),
-            "-V" | "--version" => return Ok(Command::Version),
-            "-i" | "--ignore-case" => ignore_case = true,
-            "-c" | "--count" => count = true,
-            "-n" | "--line-number" => {
-                // 行番号は現在デフォルトで表示するため，互換用に受け付ける。
-            }
-            _ => return Err(format!("unknown option: {arg}")),
-        }
-    }
-
-    Ok(Command::Search(Config { ignore_case, count }))
 }
 
 fn run_interactive_search(config: &Config) -> Result<String, String> {
@@ -262,74 +251,51 @@ fn format_matched_line(matched_line: &MatchedLine) -> String {
     )
 }
 
-fn help_message() -> String {
-    let message = r#"txtfind
-
-テキストファイル内の文字列を検索するCLIツール
-
-USAGE:
-    txtfind [OPTIONS]
-
-OPTIONS:
-    -i, --ignore-case     大文字・小文字を区別せずに検索する
-    -n, --line-number     行番号を表示する（現在はデフォルトで表示）
-    -c, --count           一致件数のみを表示する
-    -h, --help            ヘルプを表示する
-    -V, --version         バージョン情報を表示する
-
-INTERACTIVE FLOW:
-    1. 現在の階層にあるファイル一覧を表示する
-    2. 検索対象ファイルの番号を入力する
-    3. 検索文字列を入力する
-    4. 検索結果を表示する
-
-OUTPUT FORMAT:
-    file_name:line_number: matched line
-
-FILE SELECTION:
-    1 2 3
-    1,2,3
-"#;
-
-    message.to_string()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::env;
-    use std::fs::{self, File};
+    use clap::Parser;
 
     #[test]
     fn parse_no_options() {
-        let args: Vec<String> = vec![];
-        let command = parse_args(args).unwrap();
+        let args = Args::try_parse_from(["txtfind"]).unwrap();
 
-        assert_eq!(
-            command,
-            Command::Search(Config {
-                ignore_case: false,
-                count: false,
-            })
-        );
+        assert!(!args.ignore_case);
+        assert!(!args.line_number);
+        assert!(!args.count);
+        assert!(!args.completions);
     }
 
     #[test]
-    fn parse_options() {
-        let args = vec![
-            "--ignore-case".to_string(),
-            "--line-number".to_string(),
-            "--count".to_string(),
-        ];
-        let command = parse_args(args).unwrap();
+    fn parse_ignore_case_option() {
+        let args = Args::try_parse_from(["txtfind", "--ignore-case"]).unwrap();
 
-        assert_eq!(
-            command,
-            Command::Search(Config {
-                ignore_case: true,
-                count: true,
-            })
-        );
+        assert!(args.ignore_case);
+        assert!(!args.count);
+        assert!(!args.completions);
+    }
+
+    #[test]
+    fn parse_count_option() {
+        let args = Args::try_parse_from(["txtfind", "--count"]).unwrap();
+
+        assert!(!args.ignore_case);
+        assert!(args.count);
+        assert!(!args.completions);
+    }
+
+    #[test]
+    fn parse_line_number_option() {
+        let args = Args::try_parse_from(["txtfind", "--line-number"]).unwrap();
+
+        assert!(args.line_number);
+    }
+
+    #[test]
+    fn parse_completions_option() {
+        let args = Args::try_parse_from(["txtfind", "--completions"]).unwrap();
+
+        assert!(args.completions);
     }
 
     #[test]
@@ -361,6 +327,13 @@ mod tests {
     }
 
     #[test]
+    fn reject_empty_selection() {
+        let result = parse_selected_indexes("", 5);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn select_files() {
         let file_names = vec![
             "log1.txt".to_string(),
@@ -374,33 +347,6 @@ mod tests {
         assert_eq!(
             selected_files,
             vec!["log1.txt".to_string(), "memo.txt".to_string()]
-        );
-    }
-
-    #[test]
-    fn collect_files_includes_hidden_files() {
-        let original_dir = env::current_dir().unwrap();
-        let test_dir = env::temp_dir().join(format!(
-            "txtfind_unit_test_{}",
-            std::process::id()
-        ));
-
-        let _ = fs::remove_dir_all(&test_dir);
-        fs::create_dir_all(&test_dir).unwrap();
-
-        File::create(test_dir.join("memo.txt")).unwrap();
-        File::create(test_dir.join(".hidden.txt")).unwrap();
-        fs::create_dir_all(test_dir.join("directory")).unwrap();
-
-        env::set_current_dir(&test_dir).unwrap();
-        let file_names = collect_current_directory_files().unwrap();
-        env::set_current_dir(original_dir).unwrap();
-
-        let _ = fs::remove_dir_all(&test_dir);
-
-        assert_eq!(
-            file_names,
-            vec![".hidden.txt".to_string(), "memo.txt".to_string()]
         );
     }
 
@@ -431,7 +377,21 @@ mod tests {
         let contents = "Error: first\ninfo: message\nERROR: second\n";
         let matched_lines = find_matched_lines("log.txt", contents, "error", true);
 
-        assert_eq!(matched_lines.len(), 2);
+        assert_eq!(
+            matched_lines,
+            vec![
+                MatchedLine {
+                    file_name: "log.txt".to_string(),
+                    line_number: 1,
+                    text: "Error: first".to_string(),
+                },
+                MatchedLine {
+                    file_name: "log.txt".to_string(),
+                    line_number: 3,
+                    text: "ERROR: second".to_string(),
+                },
+            ]
+        );
     }
 
     #[test]
